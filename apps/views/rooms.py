@@ -1,7 +1,8 @@
 from flask import Blueprint, request
 
 from apps.middleware.decorator import errorHandler
-from apps.model.model import Room, ChatHistory
+from apps.model.model import Room, ChatHistory, User
+from extensions import db
 from utils import R
 from utils.model2dict import model2dict
 
@@ -22,8 +23,15 @@ def getList():
 @errorHandler
 def getHistory():
     roomID = request.args.get('roomID')
-    history = ChatHistory.query.filter_by(roomID=roomID).all()
-    history = [model2dict(i) for i in history]
-    if len(history) == 0:
-        return R.failed('房间列表为空')
-    return R.ok(history)
+    if not roomID:
+        return R.failed('房间ID不能为空')
+    history = (db.session.query(ChatHistory.create_at, ChatHistory.message, User.account)
+               .join(User, User.id == ChatHistory.user_id)
+               .filter(ChatHistory.room_id == roomID)
+               .all())
+
+    return R.ok([{
+        'sendTime': i.create_at.strftime('%Y-%m-%d %H:%M:%S'),
+        'msg': i.message,
+        'sender': i.account
+    } for i in history])

@@ -1,12 +1,10 @@
-from datetime import datetime
-
 from flask import request
 from flask_socketio import emit, join_room, leave_room
 
 from apps import socketio
+from apps.constants.constants import msgConstant
 from apps.model.model import ChatHistory
 from utils.getUser import getUser
-from utils.model2dict import model2dict
 
 onlineUserAmount = 0
 userDict = {}
@@ -24,7 +22,7 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     sid = request.sid
-    global onlineUserAmount
+    global onlineUserAmount, userDict, rooms
     onlineUserAmount -= 1
     print(f'==========会话{request.sid}断开连接==========')
     emit('countUser', {'onlineUserAmount': onlineUserAmount}, broadcast=True)
@@ -41,78 +39,74 @@ def handle_disconnect():
     # 删除该用户房间信息
     rooms[roomID].remove(userID)
     leave_room(room=roomID, sid=sid)
-    emit('clientGetMsg', {
-        'role': 'system',
-        'sender': 'system',
-        'msg': f'用户 {username} 已离开房间[{roomID}]',
-        'sendTime': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, room=roomID)
+    emit('clientGetMsg', msgConstant(
+        msg=f'用户 {username} 已离开房间',
+        username=username,
+        role='system'
+    ), room=roomID)
     emit('offline', {'sid': sid, 'username': userDetail['username']}, broadcast=True)
 
 
 @socketio.on('serverJoinRoom')
 def handleJoinRoom(data):
-    global rooms
+    global rooms, userDict
+
     sid = request.sid
-    roomID = data.get('roomID')
-    username = data.get('username')
-    userID = data.get('userID')
+    newRoomID = data['roomID']
+    username = data['username']
+    userID = data['userID']
 
-    # 更新用户信息
-    # userDict[sid] = {'username': username, 'userID': userID, 'room': roomID}
-    userDict[sid] = {'username': username, 'userID': userID}
-    # userDetail = rooms.get(roomID)
+    if sid not in userDict:
+        # 更新用户信息
+        emit('online', {'username': username}, broadcast=True, skip_sid=sid)
+    else:
+        # 检查用户是否已在其他房间中，在则退出
+        oldRoomID = userDict[sid].get('roomID')
+        if oldRoomID:
+            rooms[oldRoomID].remove(userID)
+            leave_room(sid=sid, room=oldRoomID)
+            # 广播离开房间消息
+            emit('clientGetMsg', msgConstant(
+                msg=f'用户 {username} 已离开房间',
+                username=username,
+                role='system'
+            ), room=oldRoomID)
+            print(f"用户 {username}（{sid}）离开房间 {oldRoomID}")
+            # 广播离开房间消息
+            # emit('clientLeaveRoom', {'room': newRoomID})
 
-    rooms[roomID] = [userID] if rooms.get(roomID) is None else rooms[roomID].append(userID)
-    join_room(room=roomID, sid=sid)
-    print(f"用户 {username}（{sid}）加入房间 {roomID}")
-
-    emit('online', {'sid': sid, 'username': username}, broadcast=True, skip_sid=sid)
-    emit('clientJoinRoom', {'sid': sid, 'username': username, 'roomID': roomID}, room=roomID)
-
-
-@socketio.on('serverLeaveRoom')
-def handleLeaveRoom(data):
-    roomID = data.get('roomID')
-
-    global rooms
-    sid = request.sid
-    userID, username = getUser(userDict, sid)
-
-    rooms[roomID].remove(userID)
-    leave_room(sid=sid, room=roomID)
-    emit('clientGetMsg', {
-        'role': 'system',
-        'sender': 'system',
-        'msg': f'用户 {username} 已离开房间[{roomID}]',
-        'sendTime': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, room=roomID)
-    print(f"用户 {username} 已离开房间[{roomID}]")
+    userDict[sid] = {'username': username, 'userID': userID, 'roomID': newRoomID}
+    if newRoomID not in rooms:
+        rooms[newRoomID] = [userID]
+    else:
+        rooms[newRoomID].append(userID)
+    join_room(room=newRoomID, sid=sid)
+    print(f"用户 {username}（{sid}）进入房间 {newRoomID}")
+    # 广播进入房间消息
+    emit('clientGetMsg', msgConstant(
+        msg=f'用户 {username} 已进入房间',
+        username=username,
+        role='system'
+    ), room=newRoomID)
+    # 广播进入房间消息
+    emit('clientJoinRoom', {'room': newRoomID})
 
 
 @socketio.on('serverSendMsg')
 def sendMsg(data):
-    msg = data['msg']
-    roomID = data['roomID']
+    global userDict
+    msg = data
     if not msg:
         emit('error', {'msg': '消息不能为空'})
     else:
         sid = request.sid
-        userID, username = getUser(userDict, sid)
+        userID, username, roomID = getUser(userDict, sid)
+        if not all([userID, username, roomID]):
+            emit('error', {'msg': '用户信息缺失，请重新登录'})
+            return
         print(f'{username} 给房间 {roomID} 发送消息：{msg}')
         newChatHistory = ChatHistory(userID, roomID, msg)
         newChatHistory.save()
         emit('clientGetMsg',
-             {'role': 'user', 'msg': msg, 'sender': username, 'sendTime': datetime.now().strftime('%Y-%m-%d %H:%M:%S')},
+             msgConstant(msg=msg, username=username),
              room=roomID)
-
-
-# @socketio.on('getHistory')
-# def getHistory(roomID):
-#     history = ChatHistory.query.filter_by(roomID=roomID).all()
-#     history = [model2dict(i) for i in history]
-#     emi
-
-# @socketio.on('getRoomList')
-# def getRoomList():
-#     room = Room.query.all()
-#     room = [model2dict(i) for i in room]
-#     emit('getRoomList', room)

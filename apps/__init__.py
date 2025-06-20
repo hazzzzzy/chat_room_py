@@ -1,15 +1,17 @@
+import eventlet
 from flask import Flask
+from flask_cors import CORS
 from flask_socketio import SocketIO
+
 from apps.views import register_blueprint
 from apps.ws import register_ws
 from extensions import db
-from flask_cors import CORS
 
-# 先创建socketio实例
+eventlet.monkey_patch()
 socketio = SocketIO(
     cors_allowed_origins='*',
-    engineio_logger=True,
-    logger=True,
+    engineio_logger=False,
+    logger=False,
     ping_timeout=10,
     ping_interval=5,
     async_mode='eventlet')
