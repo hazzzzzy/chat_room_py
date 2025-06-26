@@ -31,6 +31,7 @@ class base_db:
             db.session.close()
 
     # 删除数据
+    @staticmethod
     def delete(self):
         try:
             db.session.delete(self)
