@@ -11,3 +11,10 @@ def msgConstant(msg, username='', role='user'):
     if role != '用户':
         username = role
     return {'role': role, 'msg': msg, 'sender': username, 'sendTime': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+
+def errorMsgConstant(code=0, msg='操作失败'):
+    return {
+        'code': code,
+        'msg': msg,
+    }

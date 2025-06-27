@@ -3,10 +3,7 @@ import json
 
 import jwt
 
-# --- 1. 定义一个用于签名的密钥 ---
-# 在实际应用中，这个密钥应该是长而复杂的随机字符串，并且绝不能泄露！
-# 可以通过 os.urandom(24).hex() 生成
-SECRET_KEY = "6202ee63b@0c2463bae3!40e8765a481f1"
+from config import SECRET_KEY
 
 
 # --- 2. 模拟用户登录，生成 JWT ---

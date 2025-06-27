@@ -4,7 +4,7 @@ from flask import request
 from flask_socketio import emit, join_room, leave_room, disconnect
 
 from apps import socketio
-from apps.constants.constants import msgConstant
+from apps.constants.constants import msgConstant, errorMsgConstant
 from apps.model.model import ChatHistory, User
 from extensions import db
 from utils.jwt_instance import verify_jwt
@@ -31,8 +31,16 @@ def getOnlineAmount():
     _ = getValue(roomsKey)
     if not _:
         return 0
-    print('count', _)
-    return sum(len(users) for users in _.values())
+    return sum(len(set(users)) for users in _.values())
+
+
+def getRoomOnlineAmount(roomID):
+    _ = getValue(roomsKey)
+    if not _:
+        return 0
+    if roomID not in _:
+        return 0
+    return len(set(_[roomID]))
 
 
 @socketio.on('connect')
@@ -41,28 +49,41 @@ def handle_connect(auth):
     # 鉴权
     token = auth.get('token')
     if not token:
-        emit('error', {'msg': '用户未登录，无法连接服务器，请重新登录'})
+        emit('error', errorMsgConstant(msg='用户未登录，无法连接服务器，请重新登录'))
         disconnect()
         return
-    user, result = verify_jwt(token.removeprefix('Bearer '))
+    currentUser, result = verify_jwt(token.removeprefix('Bearer '))
     if not result:
-        emit('error', {'msg': user})
+        emit('error', errorMsgConstant(msg=currentUser))
         disconnect()
         return
+
     # 更新在线用户
     users = getValue(onlineUsersKey)
-    if not users:
-        setValue(onlineUsersKey, {sid: user})
-    else:
-        users[sid] = user
+    if users:
+        # 断开同账号在线连接
+        for existSID, existUser in users.items():
+            if existUser['userID'] == currentUser['userID']:
+                # users.pop(existSID)
+                # setValue(onlineUsersKey, users)
+                emit('error', errorMsgConstant(msg='链接断开，同账号用户已上线'), room=existSID)
+                disconnect(sid=existSID)
+        # newUsers = getValue(onlineUsersKey)
+        # newUsers[sid] = currentUser
+        # setValue(onlineUsersKey, newUsers)
+        # todo：一个账号开链各个窗口会多一个用户信息
+        users[sid] = currentUser
         setValue(onlineUsersKey, users)
-    emit('online', {'username': user['username']}, broadcast=True, skip_sid=sid)
+    else:
+        setValue(onlineUsersKey, {sid: currentUser})
+
+    emit('online', {'username': currentUser['username']}, broadcast=True, skip_sid=sid)
     print(f'==========会话{request.sid}连接==========')
-    print(f'用户[{user["username"]}]上线')
+    print(f'用户[{currentUser["username"]}]上线')
 
 
 @socketio.on('disconnect')
-def handle_disconnect(_):
+def handle_disconnect():
     # 删除该在线用户信息
     sid = request.sid
     users = getValue(onlineUsersKey)
@@ -70,14 +91,11 @@ def handle_disconnect(_):
     user = users.pop(sid)
     setValue(onlineUsersKey, users)
     if not user:
-        emit('error', {'msg': '断联接口报错，请联系管理员'})
+        emit('error', errorMsgConstant(msg='断联接口报错，请联系管理员'))
         return
     username = user['username']
     userID = user['userID']
     roomID = str(user.get('roomID'))
-    # print(type(rooms), rooms)
-    # print(type(roomID), roomID)
-    # print(type(userID), userID)
     if roomID:
         # 删除该用户房间信息
         rooms[roomID].remove(userID)
@@ -88,11 +106,14 @@ def handle_disconnect(_):
             username=username,
             role='system'
         ), room=roomID)
-
+    skipSidList = []
+    for s, u in users.items():
+        if u['username'] == username:
+            skipSidList.append(s)
     emit('countUser', {'onlineUserAmount': getOnlineAmount()}, broadcast=True)
-    emit('offline', {'username': username}, broadcast=True)
-    print(f"用户[{username}]下线")
-    print(f'==========会话{request.sid}断开连接==========')
+    emit('offline', {'username': username}, broadcast=True, skip_sid=skipSidList)
+    print(f"用户[{username}]下线了")
+    print(f'==========会话[{request.sid}]断开连接==========')
 
 
 @socketio.on('serverJoinRoom')
@@ -104,11 +125,11 @@ def handleJoinRoom(data):
 
     users = getValue(onlineUsersKey)
     rooms = getValue(roomsKey) or {}
-    print('before join ', users)
-    print('before join ', rooms)
+    # print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+    # print('before join ', users)
+    # print('before join ', rooms)
 
     # 检查用户是否已在其他房间中，在则退出
-    # todo: 多开一个窗口，离开房间后会删除第一条数据
     oldRoomID = users[sid].get('roomID')
     if oldRoomID:
         oldRoomID = str(oldRoomID)  # 确保oldRoomID是字符串类型
@@ -120,7 +141,7 @@ def handleJoinRoom(data):
             username=username,
             role='system'
         ), room=oldRoomID)
-        emit('clientCountRoomUser', {'onlineRoomUserAmount': len(rooms[oldRoomID])}, room=oldRoomID)
+        emit('clientCountRoomUser', {'onlineRoomUserAmount': getRoomOnlineAmount(oldRoomID)}, room=oldRoomID)
         print(f"用户[{username}]离开房间[{oldRoomID}]")
 
     # 更新用户信息
@@ -131,13 +152,12 @@ def handleJoinRoom(data):
     if newRoomID not in rooms:
         rooms[newRoomID] = [userID]
     else:
-        if userID not in rooms[newRoomID]:
-            rooms[newRoomID].append(userID)
+        rooms[newRoomID].append(userID)
 
     # 更新房间内用户信息
     setValue(roomsKey, rooms)
-    print('after join ', users)
-    print('after join ', rooms)
+    # print('after join ', users)
+    # print('after join ', rooms)
 
     # 加入新房间
     join_room(room=newRoomID, sid=sid)
@@ -161,13 +181,13 @@ def handleJoinRoom(data):
         role='system'
     ), room=newRoomID)
     emit('clientJoinRoom', {'room': newRoomID})
-    emit('clientCountRoomUser', {'onlineRoomUserAmount': len(rooms[newRoomID])}, room=newRoomID)
+    emit('clientCountRoomUser', {'onlineRoomUserAmount': getRoomOnlineAmount(newRoomID)}, room=newRoomID)
 
 
 @socketio.on('serverSendMsg')
 def sendMsg(msg):
     if not msg:
-        emit('error', {'msg': '消息不能为空'})
+        emit('error', errorMsgConstant(msg='消息不能为空'))
     else:
         sid = request.sid
         users = getValue(onlineUsersKey)
@@ -178,7 +198,7 @@ def sendMsg(msg):
         roomID = user.get('roomID')
 
         if not all([userID, username, roomID]):
-            emit('error', {'msg': '用户信息缺失，请刷新页面重新链接'})
+            emit('error', errorMsgConstant(msg='用户信息缺失，请刷新页面重新链接'))
             disconnect()
             return
         print(f'用户[{username}]给房间[{roomID}]发送消息：{msg}')
