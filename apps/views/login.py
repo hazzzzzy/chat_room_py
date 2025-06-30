@@ -25,7 +25,7 @@ def login(**kwargs):
     elif user.password != pwd:
         return R.failed('密码错误')
 
-    token = generate_jwt({'userID': userID, 'username': username})
+    token = generate_jwt({'userID': str(userID), 'username': username})
     if not token:
         return R.failed('生成token失败，请稍后再试')
     return R.ok({

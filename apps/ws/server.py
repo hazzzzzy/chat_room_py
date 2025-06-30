@@ -1,3 +1,4 @@
+import copy
 import json
 
 from flask import request
@@ -59,45 +60,46 @@ def handle_connect(auth):
         return
 
     # 更新在线用户
+    isBroadcast = True
     users = getValue(onlineUsersKey)
     if users:
-        # 断开同账号在线连接
-        for existSID, existUser in users.items():
-            if existUser['userID'] == currentUser['userID']:
-                # users.pop(existSID)
-                # setValue(onlineUsersKey, users)
-                emit('error', errorMsgConstant(msg='链接断开，同账号用户已上线'), room=existSID)
-                disconnect(sid=existSID)
-        # newUsers = getValue(onlineUsersKey)
-        # newUsers[sid] = currentUser
-        # setValue(onlineUsersKey, newUsers)
-        # todo：一个账号开链各个窗口会多一个用户信息
         users[sid] = currentUser
         setValue(onlineUsersKey, users)
+        # 断开同账号在线连接
+        for existSID, existUser in users.items():
+            if existSID != sid and existUser['userID'] == currentUser['userID']:
+                isBroadcast = False
+                emit('error', errorMsgConstant(msg='链接断开，同账号用户已上线'), room=existSID)
+                disconnect(sid=existSID)
+        newUser = getValue(onlineUsersKey)
+        newUser[sid] = currentUser
+        setValue(onlineUsersKey, newUser)
     else:
         setValue(onlineUsersKey, {sid: currentUser})
-
-    emit('online', {'username': currentUser['username']}, broadcast=True, skip_sid=sid)
-    print(f'==========会话{request.sid}连接==========')
+    if isBroadcast:
+        emit('online', {'username': currentUser['username']}, broadcast=True, include_self=False)
+    print(f'==========会话[{request.sid}]连接==========')
     print(f'用户[{currentUser["username"]}]上线')
 
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    # 删除该在线用户信息
     sid = request.sid
     users = getValue(onlineUsersKey)
+    usersCopy = copy.deepcopy(users)
     rooms = getValue(roomsKey)
     user = users.pop(sid)
-    setValue(onlineUsersKey, users)
     if not user:
         emit('error', errorMsgConstant(msg='断联接口报错，请联系管理员'))
         return
+    setValue(onlineUsersKey, users)
+
     username = user['username']
     userID = user['userID']
     roomID = str(user.get('roomID'))
+    # 删除该用户房间信息并离开房间
     if roomID:
-        # 删除该用户房间信息
+        roomID = str(roomID)
         rooms[roomID].remove(userID)
         setValue(roomsKey, rooms)
         leave_room(room=roomID, sid=sid)
@@ -106,12 +108,15 @@ def handle_disconnect():
             username=username,
             role='system'
         ), room=roomID)
-    skipSidList = []
-    for s, u in users.items():
-        if u['username'] == username:
-            skipSidList.append(s)
+
     emit('countUser', {'onlineUserAmount': getOnlineAmount()}, broadcast=True)
-    emit('offline', {'username': username}, broadcast=True, skip_sid=skipSidList)
+
+    isBroadcast = True
+    for s, u in usersCopy.items():
+        if u['userID'] == userID:
+            isBroadcast = False
+    if isBroadcast:
+        emit('offline', {'username': username}, broadcast=True)
     print(f"用户[{username}]下线了")
     print(f'==========会话[{request.sid}]断开连接==========')
 
@@ -125,6 +130,7 @@ def handleJoinRoom(data):
 
     users = getValue(onlineUsersKey)
     rooms = getValue(roomsKey) or {}
+
     # print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
     # print('before join ', users)
     # print('before join ', rooms)
@@ -153,7 +159,6 @@ def handleJoinRoom(data):
         rooms[newRoomID] = [userID]
     else:
         rooms[newRoomID].append(userID)
-
     # 更新房间内用户信息
     setValue(roomsKey, rooms)
     # print('after join ', users)
@@ -192,7 +197,7 @@ def sendMsg(msg):
         sid = request.sid
         users = getValue(onlineUsersKey)
         user = users[sid]
-        print('msg:', user)
+        # print('msg:', user)
         username = user['username']
         userID = user['userID']
         roomID = user.get('roomID')
