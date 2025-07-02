@@ -1,4 +1,3 @@
-import copy
 import json
 
 from flask import request
@@ -86,7 +85,7 @@ def handle_connect(auth):
 def handle_disconnect():
     sid = request.sid
     users = getValue(onlineUsersKey)
-    usersCopy = copy.deepcopy(users)
+    # usersCopy = copy.deepcopy(users)
     rooms = getValue(roomsKey)
     user = users.pop(sid)
     if not user:
@@ -108,11 +107,12 @@ def handle_disconnect():
             username=username,
             role='system'
         ), room=roomID)
+        emit('clientCountRoomUser', {'onlineRoomUserAmount': getRoomOnlineAmount(roomID)}, room=roomID)
 
     emit('countUser', {'onlineUserAmount': getOnlineAmount()}, broadcast=True)
 
     isBroadcast = True
-    for s, u in usersCopy.items():
+    for s, u in users.items():
         if u['userID'] == userID:
             isBroadcast = False
     if isBroadcast:
