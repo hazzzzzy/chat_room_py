@@ -1,4 +1,3 @@
-from flask_redis import FlaskRedis
 from flask_sqlalchemy import SQLAlchemy
 
 # redisClient = FlaskRedis()

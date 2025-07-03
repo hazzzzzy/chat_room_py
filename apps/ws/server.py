@@ -2,6 +2,7 @@ import json
 
 from flask import request
 from flask_socketio import emit, join_room, leave_room, disconnect
+from sqlalchemy.dialects import mysql
 
 from apps import socketio
 from apps.constants.constants import msgConstant, errorMsgConstant
@@ -124,7 +125,7 @@ def handle_disconnect():
 @socketio.on('serverJoinRoom')
 def handleJoinRoom(data):
     sid = request.sid
-    newRoomID = str(data['roomID'])
+    newRoomID = data['roomID']
     username = data['username']
     userID = data['userID']
 
@@ -170,15 +171,25 @@ def handleJoinRoom(data):
     emit('countUser', {'onlineUserAmount': getOnlineAmount()}, broadcast=True)
 
     # 把推送历史消息放到这里
-    history = (db.session.query(ChatHistory.create_at, ChatHistory.message, User.username)
+    history = (db.session.query(ChatHistory.id, ChatHistory.create_at, ChatHistory.message, User.username)
                .join(User, User.id == ChatHistory.user_id)
                .filter(ChatHistory.room_id == newRoomID)
-               .all())
-    emit('clientGetHistory', [{
-        'sendTime': i.create_at.strftime('%Y-%m-%d %H:%M:%S'),
-        'msg': i.message,
-        'sender': i.username
-    } for i in history])
+               )
+    roomMessageAmount = history.count()
+    if roomMessageAmount == 0:
+        emit('clientGetHistory', {
+            'history': [],
+            'roomMessageAmount': roomMessageAmount})
+    else:
+        history = history.order_by(ChatHistory.create_at.desc()).limit(5).all()
+        emit('clientGetHistory', {
+            'history': [{
+                'id': i[0],
+                'sendTime': i[1].strftime('%Y-%m-%d %H:%M:%S'),
+                'msg': i[2],
+                'sender': i[3]
+            } for i in history][::-1],
+            'roomMessageAmount': roomMessageAmount})
     # 广播进入房间消息
     emit('clientGetMsg', msgConstant(
         msg=f'用户[{username}]已进入房间',
@@ -212,3 +223,26 @@ def sendMsg(msg):
         emit('clientGetMsg',
              msgConstant(msg=msg, username=username),
              room=roomID)
+
+
+@socketio.on('serverLoadMoreHistory')
+def sendMsg(data):
+    historyID = data.get('historyID')
+    roomID = data.get('roomID')
+    history = (db.session.query(ChatHistory.id, ChatHistory.create_at, ChatHistory.message, User.username)
+               .join(User, User.id == ChatHistory.user_id)
+               .filter(ChatHistory.room_id == roomID, ChatHistory.id < historyID)
+               )
+    roomMessageAmount = history.count()
+    history = history.order_by(ChatHistory.create_at.desc()).limit(5).all()
+    if roomMessageAmount == 0:
+        emit('clientLoadMoreHistory', {
+            'history': []})
+    else:
+        emit('clientLoadMoreHistory', {
+            'history': [{
+                'id': i[0],
+                'sendTime': i[1].strftime('%Y-%m-%d %H:%M:%S'),
+                'msg': i[2],
+                'sender': i[3]
+            } for i in history][::-1]})
