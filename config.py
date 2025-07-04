@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 JWT_EXPIRE_TIME = 12 * 60 * 60  # JWT 过期时间，单位为秒，默认30分钟
+MSG_SINGLE_AMOUNT = 50  # 单次加载消息的数量
 SECRET_KEY = os.environ.get('SECRET_KEY')
 # 生产环境强烈建议从环境变量获取 SECRET_KEY，不要用默认值
 

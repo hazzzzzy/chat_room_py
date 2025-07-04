@@ -7,6 +7,7 @@ from sqlalchemy.dialects import mysql
 from apps import socketio
 from apps.constants.constants import msgConstant, errorMsgConstant
 from apps.model.model import ChatHistory, User
+from config import MSG_SINGLE_AMOUNT
 from extensions import db
 from utils.jwt_instance import verify_jwt
 from utils.redis_instance import redisSet, redisGet
@@ -132,10 +133,6 @@ def handleJoinRoom(data):
     users = getValue(onlineUsersKey)
     rooms = getValue(roomsKey) or {}
 
-    # print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-    # print('before join ', users)
-    # print('before join ', rooms)
-
     # 检查用户是否已在其他房间中，在则退出
     oldRoomID = users[sid].get('roomID')
     if oldRoomID:
@@ -162,8 +159,6 @@ def handleJoinRoom(data):
         rooms[newRoomID].append(userID)
     # 更新房间内用户信息
     setValue(roomsKey, rooms)
-    # print('after join ', users)
-    # print('after join ', rooms)
 
     # 加入新房间
     join_room(room=newRoomID, sid=sid)
@@ -181,7 +176,7 @@ def handleJoinRoom(data):
             'history': [],
             'roomMessageAmount': roomMessageAmount})
     else:
-        history = history.order_by(ChatHistory.create_at.desc()).limit(5).all()
+        history = history.order_by(ChatHistory.create_at.desc()).limit(MSG_SINGLE_AMOUNT).all()
         emit('clientGetHistory', {
             'history': [{
                 'id': i[0],
@@ -234,7 +229,7 @@ def sendMsg(data):
                .filter(ChatHistory.room_id == roomID, ChatHistory.id < historyID)
                )
     roomMessageAmount = history.count()
-    history = history.order_by(ChatHistory.create_at.desc()).limit(5).all()
+    history = history.order_by(ChatHistory.create_at.desc()).limit(MSG_SINGLE_AMOUNT).all()
     if roomMessageAmount == 0:
         emit('clientLoadMoreHistory', {
             'history': []})
