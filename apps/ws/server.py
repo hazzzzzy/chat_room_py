@@ -1,4 +1,5 @@
 import json
+import time
 
 from flask import request
 from flask_socketio import emit, join_room, leave_room, disconnect
@@ -222,6 +223,7 @@ def sendMsg(msg):
 
 @socketio.on('serverLoadMoreHistory')
 def sendMsg(data):
+    time.sleep(2)
     historyID = data.get('historyID')
     roomID = data.get('roomID')
     history = (db.session.query(ChatHistory.id, ChatHistory.create_at, ChatHistory.message, User.username)
