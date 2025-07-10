@@ -15,9 +15,10 @@ def errorHandler(func):
     def inFunc(*args, **kwargs):
         try:
             if request.path not in ignoreList:
-                token = request.headers.get('Authorization').removeprefix('Bearer ')
+                token = request.headers.get('Authorization')
                 if not token:
                     return R.failed(code=-2, msg='用户未登录，请重新登录')
+                token = token.removeprefix('Bearer ')
                 user, result = verify_jwt(token)
                 if not result:
                     return R.failed(code=-2, msg='登录已过期，请重新登录')
@@ -33,8 +34,11 @@ def errorHandler(func):
             filename, line, func_name, text = tb[-1]
             filename = filename.split('\\')[-1].strip('.py')
             error_message = str(e)
+            if e.__dict__.get('_digest_msg'):
+                error_message = '存储桶操作失败：' + e.__dict__.get('_digest_msg').get('message') or e
             # 返回文件名、错误信息和行号
             msg = f"文件 {filename} 的第 {line} 行 出现错误：{error_message}"
-            return R.failed(msg)
+            print(msg)
+            return R.failed('服务器错误，请联系管理员')
 
     return inFunc

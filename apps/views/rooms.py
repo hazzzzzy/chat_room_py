@@ -1,8 +1,7 @@
-from flask import Blueprint, request
+from flask import Blueprint
 
 from apps.middleware.decorator import errorHandler
-from apps.model.model import Room, ChatHistory, User
-from extensions import db
+from apps.model.model import Room, User
 from utils import R
 from utils.model2dict import model2dict
 
@@ -13,11 +12,16 @@ rooms_bp = Blueprint('rooms_bp', __name__, url_prefix='/rooms')
 @errorHandler
 def getList(**kwargs):
     room = Room.query.all()
-    room = [model2dict(i) for i in room]
-    if len(room) == 0:
-        return R.failed('房间列表为空')
-    return R.ok(room)
+    if len(room) != 0:
+        room = [model2dict(i) for i in room]
 
+    avatarList = User.query.with_entities(User.id, User.avatar).all()
+    if len(avatarList) != 0:
+        avatarList = {i.id: i.avatar for i in avatarList}
+    return R.ok({
+        'room': room,
+        'avatarList': avatarList,
+    })
 
 # @rooms_bp.route('/getHistory', methods=['get'])
 # @errorHandler

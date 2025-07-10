@@ -1,9 +1,7 @@
 import json
-import time
 
 from flask import request
 from flask_socketio import emit, join_room, leave_room, disconnect
-from sqlalchemy.dialects import mysql
 
 from apps import socketio
 from apps.constants.constants import msgConstant, errorMsgConstant
@@ -108,7 +106,7 @@ def handle_disconnect():
         emit('clientGetMsg', msgConstant(
             msg=f'用户[{username}]已离开房间',
             username=username,
-            role='system'
+            role='system',
         ), room=roomID)
         emit('clientCountRoomUser', {'onlineRoomUserAmount': getRoomOnlineAmount(roomID)}, room=roomID)
 
@@ -129,7 +127,7 @@ def handleJoinRoom(data):
     sid = request.sid
     newRoomID = data['roomID']
     username = data['username']
-    userID = data['userID']
+    userID = str(data['userID'])
 
     users = getValue(onlineUsersKey)
     rooms = getValue(roomsKey) or {}
@@ -167,7 +165,7 @@ def handleJoinRoom(data):
     emit('countUser', {'onlineUserAmount': getOnlineAmount()}, broadcast=True)
 
     # 把推送历史消息放到这里
-    history = (db.session.query(ChatHistory.id, ChatHistory.create_at, ChatHistory.message, User.username)
+    history = (db.session.query(ChatHistory.id, ChatHistory.create_at, ChatHistory.message, User.username, ChatHistory.user_id)
                .join(User, User.id == ChatHistory.user_id)
                .filter(ChatHistory.room_id == newRoomID)
                )
@@ -183,7 +181,8 @@ def handleJoinRoom(data):
                 'id': i[0],
                 'sendTime': i[1].strftime('%Y-%m-%d %H:%M:%S'),
                 'msg': i[2],
-                'sender': i[3]
+                'sender': i[3],
+                'senderID': i[4]
             } for i in history][::-1],
             'roomMessageAmount': roomMessageAmount})
     # 广播进入房间消息
@@ -217,16 +216,15 @@ def sendMsg(msg):
         newChatHistory = ChatHistory(userID, roomID, msg)
         newChatHistory.save()
         emit('clientGetMsg',
-             msgConstant(msg=msg, username=username),
+             msgConstant(msg=msg, username=username, senderID=userID),
              room=roomID)
 
 
 @socketio.on('serverLoadMoreHistory')
-def sendMsg(data):
-    time.sleep(2)
+def serverLoadMoreHistory(data):
     historyID = data.get('historyID')
     roomID = data.get('roomID')
-    history = (db.session.query(ChatHistory.id, ChatHistory.create_at, ChatHistory.message, User.username)
+    history = (db.session.query(ChatHistory.id, ChatHistory.create_at, ChatHistory.message, User.username, ChatHistory.user_id)
                .join(User, User.id == ChatHistory.user_id)
                .filter(ChatHistory.room_id == roomID, ChatHistory.id < historyID)
                )
@@ -241,5 +239,6 @@ def sendMsg(data):
                 'id': i[0],
                 'sendTime': i[1].strftime('%Y-%m-%d %H:%M:%S'),
                 'msg': i[2],
-                'sender': i[3]
+                'sender': i[3],
+                'senderID': i[4]
             } for i in history][::-1]})

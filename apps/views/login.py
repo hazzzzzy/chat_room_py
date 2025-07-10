@@ -19,19 +19,22 @@ def login(**kwargs):
         return R.failed('缺少账号或密码')
     user = User.query.filter_by(account=account).first()
     username = user.username
-    userID = user.id
+    userID = str(user.id)
+    avatar = user.avatar
     if not user:
         return R.failed('查无此人')
     elif user.password != pwd:
         return R.failed('密码错误')
 
-    token = generate_jwt({'userID': str(userID), 'username': username})
+    token = generate_jwt({'userID': userID, 'username': username})
     if not token:
         return R.failed('生成token失败，请稍后再试')
+
     return R.ok({
         'username': username,
         'userID': userID,
-        'token': token
+        'token': token,
+        'avatar': {userID:avatar}
     })
 
 

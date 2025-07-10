@@ -2,5 +2,4 @@
 .idea
 __pycache__
 .env
-.env*
-test.py
+/test

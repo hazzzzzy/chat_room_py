@@ -1,5 +1,5 @@
-from apps.model.easy_model import EasyModel
 from apps.model.base_db import base_db
+from apps.model.easy_model import EasyModel
 from extensions import db
 
 
@@ -27,15 +27,17 @@ class User(EasyModel, base_db):
     username = db.Column(db.String(10), nullable=False)
     token = db.Column(db.String(255), nullable=True)
     is_admin = db.Column(db.SmallInteger, default=0, nullable=False)
+    avatar = db.Column(db.String(255), nullable=True)
 
     # 初始化
-    def __init__(self, account, sid, password, username, token=None, is_admin=0):
+    def __init__(self, account, sid, password, username, avatar, token=None, is_admin=0, ):
         self.account = account
         self.sid = sid
         self.password = password
         self.username = username
         self.is_admin = is_admin
         self.token = token
+        self.avatar = avatar
 
 
 class Room(EasyModel, base_db):

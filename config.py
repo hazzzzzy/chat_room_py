@@ -4,10 +4,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+HOST = os.environ.get('HOST')
+PORT = int(os.environ.get('PORT'))
+
 JWT_EXPIRE_TIME = 12 * 60 * 60  # JWT 过期时间，单位为秒，默认30分钟
 MSG_SINGLE_AMOUNT = 50  # 单次加载消息的数量
-SECRET_KEY = os.environ.get('SECRET_KEY')
-# 生产环境强烈建议从环境变量获取 SECRET_KEY，不要用默认值
+SECRET_KEY = os.environ.get('SECRET_KEY')  # 生产环境强烈建议从环境变量获取 SECRET_KEY，不要用默认值
 
 # 数据库配置
 SQLALCHEMY_TRACK_MODIFICATIONS = False  # 推荐设置为 False，避免不必要的警告和开销
@@ -22,8 +24,15 @@ REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD')  # 密码可以为空字符串
 
 # 应用通用设置
 UPLOAD_FOLDER = '/static/avatars'
-MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 最大上传文件大小
+MAX_CONTENT_LENGTH = 1 * 1024 * 1024  # 最大上传文件大小
 
 # 日志级别 (通常在开发环境更详细)
 DEBUG = os.environ.get('DEBUG') == 'TRUE'  # 是否开启调试模式
 LOG_LEVEL = os.environ.get('LOG_LEVEL') or 'INFO'
+
+# 存储桶
+COS_BASE_URL = 'https://bro9-1327032498.cos.ap-nanjing.myqcloud.com/'
+COS_SECRET_ID = os.environ.get('COS_SECRET_ID')
+COS_SECRET_KEY = os.environ.get('COS_SECRET_KEY')
+COS_REGION = os.environ.get('COS_REGION')
+COS_BUCKET = os.environ.get('COS_BUCKET')

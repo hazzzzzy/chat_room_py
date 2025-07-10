@@ -1,7 +1,7 @@
 from datetime import datetime
 
 
-def msgConstant(msg, username='', role='user'):
+def msgConstant(msg, senderID=None, username='', role='user'):
     roleDict = {
         'user': '用户',
         'system': '系统消息',
@@ -10,7 +10,7 @@ def msgConstant(msg, username='', role='user'):
     role = roleDict[role]
     if role != '用户':
         username = role
-    return {'role': role, 'msg': msg, 'sender': username, 'sendTime': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    return {'role': role, 'msg': msg, 'senderID': senderID, 'sender': username, 'sendTime': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 
 def errorMsgConstant(code=0, msg='操作失败'):
