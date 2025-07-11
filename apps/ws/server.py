@@ -105,8 +105,7 @@ def handle_disconnect():
         leave_room(room=roomID, sid=sid)
         emit('clientGetMsg', msgConstant(
             msg=f'用户[{username}]已离开房间',
-            username=username,
-            role='system',
+            role=3,
         ), room=roomID)
         emit('clientCountRoomUser', {'onlineRoomUserAmount': getRoomOnlineAmount(roomID)}, room=roomID)
 
@@ -141,8 +140,7 @@ def handleJoinRoom(data):
         # 广播离开房间消息
         emit('clientGetMsg', msgConstant(
             msg=f'用户[{username}]已离开房间',
-            username=username,
-            role='system'
+            role=3
         ), room=oldRoomID)
         emit('clientCountRoomUser', {'onlineRoomUserAmount': getRoomOnlineAmount(oldRoomID)}, room=oldRoomID)
         print(f"用户[{username}]离开房间[{oldRoomID}]")
@@ -165,7 +163,12 @@ def handleJoinRoom(data):
     emit('countUser', {'onlineUserAmount': getOnlineAmount()}, broadcast=True)
 
     # 把推送历史消息放到这里
-    history = (db.session.query(ChatHistory.id, ChatHistory.create_at, ChatHistory.message, User.username, ChatHistory.user_id)
+    history = (db.session.query(ChatHistory.id,
+                                ChatHistory.create_at,
+                                ChatHistory.message,
+                                User.username,
+                                ChatHistory.user_id,
+                                ChatHistory.role)
                .join(User, User.id == ChatHistory.user_id)
                .filter(ChatHistory.room_id == newRoomID)
                )
@@ -177,19 +180,17 @@ def handleJoinRoom(data):
     else:
         history = history.order_by(ChatHistory.create_at.desc()).limit(MSG_SINGLE_AMOUNT).all()
         emit('clientGetHistory', {
-            'history': [{
-                'id': i[0],
-                'sendTime': i[1].strftime('%Y-%m-%d %H:%M:%S'),
-                'msg': i[2],
-                'sender': i[3],
-                'senderID': i[4]
-            } for i in history][::-1],
+            'history': [msgConstant(msgID=i[0],
+                                    sendTime=i[1].strftime('%Y-%m-%d %H:%M:%S'),
+                                    msg=i[2],
+                                    sender=i[3],
+                                    senderID=str(i[4]),
+                                    role=i[5]) for i in history][::-1],
             'roomMessageAmount': roomMessageAmount})
     # 广播进入房间消息
     emit('clientGetMsg', msgConstant(
         msg=f'用户[{username}]已进入房间',
-        username=username,
-        role='system'
+        role=3
     ), room=newRoomID)
     emit('clientJoinRoom', {'room': newRoomID})
     emit('clientCountRoomUser', {'onlineRoomUserAmount': getRoomOnlineAmount(newRoomID)}, room=newRoomID)
@@ -205,7 +206,7 @@ def sendMsg(msg):
         user = users[sid]
         # print('msg:', user)
         username = user['username']
-        userID = user['userID']
+        userID = str(user['userID'])
         roomID = user.get('roomID')
 
         if not all([userID, username, roomID]):
@@ -214,17 +215,28 @@ def sendMsg(msg):
             return
         print(f'用户[{username}]给房间[{roomID}]发送消息：{msg}')
         newChatHistory = ChatHistory(userID, roomID, msg)
-        newChatHistory.save()
+        db.session.add(newChatHistory)
+        db.session.flush()
         emit('clientGetMsg',
-             msgConstant(msg=msg, username=username, senderID=userID),
+             msgConstant(
+                 msgID=newChatHistory.id,
+                 msg=msg,
+                 sender=username,
+                 senderID=userID),
              room=roomID)
+        db.session.commit()
 
 
 @socketio.on('serverLoadMoreHistory')
 def serverLoadMoreHistory(data):
     historyID = data.get('historyID')
     roomID = data.get('roomID')
-    history = (db.session.query(ChatHistory.id, ChatHistory.create_at, ChatHistory.message, User.username, ChatHistory.user_id)
+    history = (db.session.query(ChatHistory.id,
+                                ChatHistory.create_at,
+                                ChatHistory.message,
+                                User.username,
+                                ChatHistory.user_id,
+                                ChatHistory.role)
                .join(User, User.id == ChatHistory.user_id)
                .filter(ChatHistory.room_id == roomID, ChatHistory.id < historyID)
                )
@@ -235,10 +247,9 @@ def serverLoadMoreHistory(data):
             'history': []})
     else:
         emit('clientLoadMoreHistory', {
-            'history': [{
-                'id': i[0],
-                'sendTime': i[1].strftime('%Y-%m-%d %H:%M:%S'),
-                'msg': i[2],
-                'sender': i[3],
-                'senderID': i[4]
-            } for i in history][::-1]})
+            'history': [msgConstant(msgID=i[0],
+                                    sendTime=i[1].strftime('%Y-%m-%d %H:%M:%S'),
+                                    msg=i[2],
+                                    sender=i[3],
+                                    senderID=str(i[4]),
+                                    role=i[5]) for i in history][::-1]})

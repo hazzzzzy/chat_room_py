@@ -8,15 +8,17 @@ class ChatHistory(EasyModel, base_db):
     user_id = db.Column(db.Integer, nullable=False)
     message = db.Column(db.String(1000))
     room_id = db.Column(db.Integer)
+    role = db.Column(db.Integer, default=2)
 
     # 初始化
-    def __init__(self, user_id=None, room_id=None, message=None):
+    def __init__(self, user_id=None, room_id=None, message=None, role=2):
         if room_id is not None:
             self.room_id = room_id
         if user_id is not None:
             self.user_id = user_id
         if message is not None:
             self.message = message
+        self.role = role
 
 
 class User(EasyModel, base_db):

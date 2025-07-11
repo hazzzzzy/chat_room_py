@@ -34,7 +34,7 @@ def login(**kwargs):
         'username': username,
         'userID': userID,
         'token': token,
-        'avatar': {userID:avatar}
+        'avatar': {userID: avatar}
     })
 
 
