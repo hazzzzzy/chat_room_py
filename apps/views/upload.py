@@ -9,7 +9,7 @@ from config import COS_BASE_URL
 from config import MAX_CONTENT_LENGTH, COS_BUCKET
 from extensions import db
 from utils import R
-from utils.cos_utils import cosUpload, useHmac
+from utils.cos_utils import cosUpload, useHmac, getAvatarList, cosDelete
 
 upload_bp = Blueprint('upload_bp', __name__)
 
@@ -31,11 +31,11 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def generateCosPath(filename, user_id):
+def generateCosPath(filename, userID):
     """生成COS存储路径"""
     ext = filename.rsplit('.', 1)[1].lower()
-    user_id = useHmac(user_id)
-    return f"avatar/{user_id}.{ext}"
+    userID = useHmac(userID)
+    return f"avatar/{userID}.{ext}"
 
 
 @upload_bp.route('/upload', methods=['post'])
@@ -63,7 +63,12 @@ def upload(**kwargs):
     if file_length > MAX_CONTENT_LENGTH:
         return R.failed(msg=f'文件大小超过限制，最大允许上传{MAX_CONTENT_LENGTH / (1024 * 1024)}MB')
     path = generateCosPath(file.filename, userID)
-    r = cosUpload(file, path)
-    User.query.filter_by(id=userID).update({'avatar': COS_BASE_URL + path})
+    cosUrl = COS_BASE_URL + path
+    uploadR = cosUpload(file, path)
+    User.query.filter_by(id=userID).update({'avatar': cosUrl})
     db.session.commit()
-    return R.ok(data=COS_BASE_URL + path)
+    for i in getAvatarList():
+        cryptoUserID = i.split('.')[0].removeprefix('avatar/')
+        if cryptoUserID == useHmac(userID) and i != path:
+            delR = cosDelete(i)
+    return R.ok(data=cosUrl)

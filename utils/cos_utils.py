@@ -25,6 +25,14 @@ def cosUpload(file, path):
     return response
 
 
+def cosDelete(path):
+    response = client.delete_object(
+        Bucket=COS_BUCKET,
+        Key=path
+    )
+    return response
+
+
 def getAvatarList():
     marker = ""
     AvatarList = []
