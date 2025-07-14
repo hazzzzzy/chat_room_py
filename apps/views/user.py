@@ -19,7 +19,7 @@ def edit(**kwargs):
     user = User.query.with_entities(User.id, User.username).all()
     if len(user) == 0:
         return R.failed(msg='没有用户数据，请联系管理员')
-    isUserExist = [i for i in user if i.id == userID]
+    isUserExist = [i for i in user if str(i.id) == userID]
     if len(isUserExist) == 0:
         return R.failed(msg='用户不存在')
     isUsernameExist = [i for i in user if i.username == username and i.id != userID]

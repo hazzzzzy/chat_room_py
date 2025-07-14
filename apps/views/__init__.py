@@ -6,11 +6,13 @@ api_bp = Blueprint('api_bp', __name__, url_prefix='/api')
 from apps.views.login import login_bp
 from apps.views.rooms import rooms_bp
 from apps.views.upload import upload_bp
+from apps.views.user import user_bp
 
 # ✅ 必须先注册子蓝图
 api_bp.register_blueprint(login_bp)
 api_bp.register_blueprint(rooms_bp)
 api_bp.register_blueprint(upload_bp)
+api_bp.register_blueprint(user_bp)
 
 
 def register_blueprint(app):
