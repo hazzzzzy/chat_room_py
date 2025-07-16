@@ -58,28 +58,33 @@ def handle_connect(auth):
         emit('error', errorMsgConstant(msg=currentUser))
         disconnect()
         return
+    user = User.query.filter_by(id=currentUser['userID']).first()
+    if not user:
+        emit('error', errorMsgConstant(msg='用户不存在，请重新登录'))
+        disconnect()
+        return
 
     # 更新在线用户
     isBroadcast = True
     users = getValue(onlineUsersKey)
     if users:
-        users[sid] = currentUser
+        users[sid] = {'userID': user.id, 'username': user.username}
         setValue(onlineUsersKey, users)
         # 断开同账号在线连接
         for existSID, existUser in users.items():
-            if existSID != sid and existUser['userID'] == currentUser['userID']:
+            if existSID != sid and existUser['userID'] == user.id:
                 isBroadcast = False
                 emit('error', errorMsgConstant(msg='链接断开，同账号用户已上线'), room=existSID)
                 disconnect(sid=existSID)
         newUser = getValue(onlineUsersKey)
-        newUser[sid] = currentUser
+        newUser[sid] = {'userID': user.id, 'username': user.username}
         setValue(onlineUsersKey, newUser)
     else:
-        setValue(onlineUsersKey, {sid: currentUser})
+        setValue(onlineUsersKey, {sid: {'userID': user.id, 'username': user.username}})
     if isBroadcast:
-        emit('online', {'username': currentUser['username']}, broadcast=True, include_self=False)
+        emit('online', {'username': user.username}, broadcast=True, include_self=False)
     print(f'==========会话[{request.sid}]连接==========')
-    print(f'用户[{currentUser["username"]}]上线')
+    print(f'用户[{user.username}]上线')
 
 
 @socketio.on('disconnect')

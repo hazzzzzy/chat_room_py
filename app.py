@@ -1,8 +1,8 @@
-import sys
+from flask_wtf.csrf import generate_csrf
 
 from apps import createApp, socketio
 from config import HOST, PORT, DEBUG
-import logging
+
 # logging.basicConfig(
 #     level=logging.INFO,
 #     format='[%(asctime)s] %(message)s',

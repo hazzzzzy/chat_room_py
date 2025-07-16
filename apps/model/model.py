@@ -30,16 +30,19 @@ class User(EasyModel, base_db):
     token = db.Column(db.String(255), nullable=True)
     is_admin = db.Column(db.SmallInteger, default=0, nullable=False)
     avatar = db.Column(db.String(255), nullable=True)
+    status = db.Column(db.SmallInteger, default=1, nullable=False)  # 1正常2禁用
+    is_delete = db.Column(db.SmallInteger, default=2, nullable=False)  # 2未删除1已删除
 
     # 初始化
-    def __init__(self, account, sid, password, username, avatar, token=None, is_admin=0, ):
+    def __init__(self, account, password, username, avatar=None, token=None, is_admin=0, status=1, is_delete=2):
         self.account = account
-        self.sid = sid
         self.password = password
         self.username = username
         self.is_admin = is_admin
         self.token = token
         self.avatar = avatar
+        self.status = status
+        self.is_delete = is_delete
 
 
 class Room(EasyModel, base_db):

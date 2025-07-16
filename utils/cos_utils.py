@@ -21,7 +21,6 @@ def cosUpload(file, path):
         Key=path,
         EnableMD5=False
     )
-    # todo：假如同对象名已存在但后缀不同，删除旧对象
     return response
 
 

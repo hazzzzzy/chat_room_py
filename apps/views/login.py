@@ -4,6 +4,7 @@ from apps.middleware.decorator import errorHandler
 from apps.model.model import User
 from utils import R
 from utils.jwt_instance import generate_jwt
+from utils.model2dict import model2dict
 from utils.redis_instance import redisGet
 
 login_bp = Blueprint('login_bp', __name__)
@@ -25,6 +26,10 @@ def login(**kwargs):
         return R.failed('查无此人')
     elif user.password != pwd:
         return R.failed('密码错误')
+    elif user.is_delete == 1:
+        return R.failed('账号已被删除，请联系管理员')
+    elif user.status != 1:
+        return R.failed('账号已被停用，请联系管理员')
 
     token = generate_jwt({'userID': userID, 'username': username})
     if not token:
