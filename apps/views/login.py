@@ -19,9 +19,6 @@ def login(**kwargs):
     if not account or not pwd:
         return R.failed('缺少账号或密码')
     user = User.query.filter_by(account=account).first()
-    username = user.username
-    userID = str(user.id)
-    avatar = user.avatar
     if not user:
         return R.failed('查无此人')
     elif user.password != pwd:
@@ -30,6 +27,9 @@ def login(**kwargs):
         return R.failed('账号已被删除，请联系管理员')
     elif user.status != 1:
         return R.failed('账号已被停用，请联系管理员')
+    username = user.username
+    userID = str(user.id)
+    avatar = user.avatar
 
     token = generate_jwt({'userID': userID, 'username': username})
     if not token:
