@@ -11,7 +11,7 @@
  Target Server Version : 80041 (8.0.41)
  File Encoding         : 65001
 
- Date: 16/07/2025 16:08:23
+ Date: 17/07/2025 09:45:36
 */
 
 SET NAMES utf8mb4;
@@ -57,6 +57,7 @@ CREATE TABLE `user`  (
   `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
   `status` tinyint NOT NULL DEFAULT 1 COMMENT '1正常2禁用',
   `is_delete` tinyint NOT NULL DEFAULT 2 COMMENT '1删除2正常',
+  `avatar_update_time` datetime NULL DEFAULT NULL COMMENT '头像更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `name`(`account` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = DYNAMIC;

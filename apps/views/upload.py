@@ -1,3 +1,4 @@
+import datetime
 import os
 
 from flask import Blueprint
@@ -64,8 +65,15 @@ def upload(**kwargs):
         return R.failed(msg=f'文件大小超过限制，最大允许上传{MAX_CONTENT_LENGTH / (1024 * 1024)}MB')
     path = generateCosPath(file.filename, userID)
     cosUrl = COS_BASE_URL + path
+    user = User.query.filter_by(id=userID).first()
+    if not user:
+        return R.failed(msg='用户不存在，请重新登录')
+    nowtime = datetime.datetime.now()
+    if user.avatar_update_time.day == nowtime.day:
+        return R.failed(msg='今天已上传过头像，请明天再试')
     uploadR = cosUpload(file, path)
-    User.query.filter_by(id=userID).update({'avatar': cosUrl})
+    user.avatar = cosUrl
+    user.avatar_update_time = nowtime
     db.session.commit()
     for i in getAvatarList():
         cryptoUserID = i.split('.')[0].removeprefix('avatar/')
