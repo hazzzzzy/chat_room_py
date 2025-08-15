@@ -1,0 +1,653 @@
+app:
+  description: ''
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: advanced-chat
+  name: ChatWave智能客服
+  use_icon_as_answer_icon: true
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/tongyi:0.0.36@d44d676ed0d949cf279de18e02590c4c0e4b225bef82106e96b1ab7b69d71fd5
+kind: app
+version: 0.3.1
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: 有什么可以帮你
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - '{{ var }}'
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInLoop: false
+        sourceType: start
+        targetType: question-classifier
+      id: 1754621551080-source-1754881080807-target
+      selected: false
+      source: '1754621551080'
+      sourceHandle: source
+      target: '1754881080807'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: llm-source-answer-target
+      selected: false
+      source: llm
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: 1755075601972-source-17550537548750-target
+      selected: false
+      source: '1755075601972'
+      sourceHandle: source
+      target: '17550537548750'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: http-request
+      id: 17550537548750-source-1755077380960-target
+      selected: false
+      source: '17550537548750'
+      sourceHandle: source
+      target: '1755077380960'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: 1755100046231-source-17550537583860-target
+      selected: false
+      source: '1755100046231'
+      sourceHandle: source
+      target: '17550537583860'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 1755077380960-source-1755138773643-target
+      selected: false
+      source: '1755077380960'
+      sourceHandle: source
+      target: '1755138773643'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: if-else
+      id: 1755138773643-source-1755139362650-target
+      source: '1755138773643'
+      sourceHandle: source
+      target: '1755139362650'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: llm
+      id: 1755139362650-true-1755100046231-target
+      selected: false
+      source: '1755139362650'
+      sourceHandle: 'true'
+      target: '1755100046231'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: if-else
+        targetType: answer
+      id: 1755139362650-false-1755136300968-target
+      selected: false
+      source: '1755139362650'
+      sourceHandle: 'false'
+      target: '1755136300968'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: llm
+      id: 1754881080807-1-llm-target
+      selected: false
+      source: '1754881080807'
+      sourceHandle: '1'
+      target: llm
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: question-classifier
+        targetType: knowledge-retrieval
+      id: 1754881080807-2-1755075601972-target
+      selected: false
+      source: '1754881080807'
+      sourceHandle: '2'
+      target: '1755075601972'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: 开始
+        type: start
+        variables: []
+      height: 54
+      id: '1754621551080'
+      position:
+        x: 30
+        y: 286
+      positionAbsolute:
+        x: 30
+        y: 286
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        default_value:
+        - key: text
+          type: string
+          value: 服务器繁忙，请稍后重试
+        desc: ''
+        error_strategy: default-value
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: qwen-plus-latest
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: 9af2826e-abaa-472c-a6b7-8096c06ee6c2
+          role: system
+          text: 你是ChatWave智能客服，需要简洁清晰地回答用户的问题
+        - id: 952c8cc8-c3e9-4e96-a92c-dc8682bf64de
+          role: user
+          text: '{{#sys.query#}}'
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: '3000'
+        selected: false
+        title: 直接调用qwen
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 156
+      id: llm
+      position:
+        x: 698
+        y: 286
+      positionAbsolute:
+        x: 698
+        y: 286
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#llm.text#}}'
+        desc: ''
+        selected: false
+        title: 成功
+        type: answer
+        variables: []
+      height: 105
+      id: answer
+      position:
+        x: 1032
+        y: 286
+      positionAbsolute:
+        x: 1032
+        y: 286
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        classes:
+        - id: '1'
+          name: 用户询问与聊天室无关问题
+        - id: '2'
+          name: 用户询问与聊天室相关问题
+        desc: ''
+        instruction: 相关的如聊天、用户、发言等等，需要你自己判断；如果输入是纯数字、标点、空白，且没有出现聊天相关的词汇或上下文，必须分类为“与聊天室无关问题”。
+        instructions: ''
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: qwen-plus-latest
+          provider: langgenius/tongyi/tongyi
+        query_variable_selector:
+        - '1754621551080'
+        - sys.query
+        selected: false
+        title: 问题分类器
+        topics: []
+        type: question-classifier
+        vision:
+          enabled: false
+      height: 172
+      id: '1754881080807'
+      position:
+        x: 364
+        y: 286
+      positionAbsolute:
+        x: 364
+        y: 286
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1755075601972'
+          - result
+        default_value:
+        - key: text
+          type: string
+          value: 服务器繁忙，请稍后重试
+        desc: ''
+        error_strategy: default-value
+        model:
+          completion_params: {}
+          mode: chat
+          name: qwen-plus-latest
+          provider: langgenius/tongyi/tongyi
+        prompt_config:
+          jinja2_variables: []
+        prompt_template:
+        - edition_type: basic
+          id: 9af2826e-abaa-472c-a6b7-8096c06ee6c2
+          role: system
+          text: '你是 SQL 专家，依据给定数据库结构与自然语言问题，生成准确高效的 SQL，不允许生成没有给定结构的sql。
+
+            1、充分理解数据库结构：表、字段、类型、主外键与表间关系及业务含义。数据库结构为：{{#context#}}
+
+            2、明确查询目标、相关表、筛选、排序、聚合、分组与连接条件。
+
+            3、构造合规 SQL：合理使用别名（包括列别名与表别名都不允许为中文），正确引用字段，选用合适的 JOIN，严谨书写 WHERE与as这类关键字
+
+            4、自检：语法正确、语义准确，能完整回答问题。
+
+            5、仅输出 SQL 语句本体；不含 XML、代码块标记、注释或说明；可直接执行。
+
+            规范大小写：SQL 关键字大写或使用反引号；表名与字段名大小写与结构一致。
+
+            6、若存在歧义，基于最合理假设生成且逻辑自洽。始终以专业、精准姿态响应。
+
+            7、不允许出现错误，例如as关键字与别名连在一起的低级错误'
+        - id: 31200ca3-64df-47b6-8f63-91c5703b8102
+          role: user
+          text: 问题：{{#sys.query#}}
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: '3000'
+        selected: false
+        structured_output_enabled: false
+        title: 读取知识库的回答
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 156
+      id: '17550537548750'
+      position:
+        x: 1032
+        y: 431
+      positionAbsolute:
+        x: 1032
+        y: 431
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1755100046231.text#}}'
+        desc: ''
+        selected: false
+        title: 成功
+        type: answer
+        variables: []
+      height: 105
+      id: '17550537583860'
+      position:
+        x: 2793
+        y: 323.5
+      positionAbsolute:
+        x: 2793
+        y: 323.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        dataset_ids:
+        - wBBaRS5tT1YAiz4WLR7pzBNHbyYNvyq9E9jpYQTCnGwZRtlLqsWAWldPOv62DKZk
+        desc: ''
+        multiple_retrieval_config:
+          reranking_enable: true
+          reranking_mode: reranking_model
+          reranking_model:
+            model: gte-rerank-v2
+            provider: langgenius/tongyi/tongyi
+          score_threshold: 0.05
+          top_k: 10
+          weights:
+            keyword_setting:
+              keyword_weight: 0.2
+            vector_setting:
+              embedding_model_name: text-embedding-v4
+              embedding_provider_name: langgenius/tongyi/tongyi
+              vector_weight: 0.8
+        query_variable_selector:
+        - '1754621551080'
+        - sys.query
+        retrieval_mode: multiple
+        selected: false
+        title: 知识检索
+        type: knowledge-retrieval
+      height: 92
+      id: '1755075601972'
+      position:
+        x: 698
+        y: 488.5
+      positionAbsolute:
+        x: 698
+        y: 488.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: key-value-256
+            key: ''
+            type: text
+            value: '{
+
+              ''sql'':{{#17550537548750.text#}}
+
+              }'
+          type: json
+        default_value:
+        - key: body
+          type: string
+          value: 服务器繁忙，请稍后重试
+        - key: status_code
+          type: number
+          value: '201'
+        - key: headers
+          type: object
+          value: '{}'
+        desc: ''
+        error_strategy: default-value
+        headers: Content-Type:application/json
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 1080
+        selected: true
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: HTTP 请求
+        type: http-request
+        url: ''
+        variables: []
+      height: 120
+      id: '1755077380960'
+      position:
+        x: 1366
+        y: 456.5
+      positionAbsolute:
+        x: 1366
+        y: 456.5
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1755138773643'
+          - data
+        default_value:
+        - key: text
+          type: string
+          value: 服务器繁忙，请稍后重试
+        desc: ''
+        error_strategy: default-value
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: qwen-plus-latest
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: 4bff452d-9fb1-40e9-bad7-d303ac9bd827
+          role: system
+          text: 你是ChatWave智能客服，你将根据用户的问题与数据（对问题进行查询后得到的准确数据，数据为{{#context#}}，当数据为空时向用户如实说明情况）进行整理后做出精简无冗余的回应，同时对一些敏感数据进行处理，如密码、密钥等字段与数据，不允许返回敏感数据给客户
+        - id: accac3d8-ad18-4b62-a13b-8437ca2412f6
+          role: user
+          text: 问题：{{#sys.query#}}
+        selected: false
+        title: 对请求后的结果进行整理
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 126
+      id: '1755100046231'
+      position:
+        x: 2459
+        y: 323.5
+      positionAbsolute:
+        x: 2459
+        y: 323.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1755138773643.data#}}'
+        desc: ''
+        selected: false
+        title: 失败
+        type: answer
+        variables: []
+      height: 105
+      id: '1755136300968'
+      position:
+        x: 2793
+        y: 476.5
+      positionAbsolute:
+        x: 2793
+        y: 476.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\n\ndef main(status_code: float, body: str):\n    body =\
+          \ json.loads(body)\n    if status_code == 200:\n        if body.get('code')\
+          \ == 0:\n            return {\n                \"code\": 0,\n          \
+          \      \"data\": str(body['data'])  \n            } if body['data'] else\
+          \  {\n                \"code\": 0,\n                \"data\": '无数据'  \n\
+          \            }\n        else:\n            return {\n                \"\
+          code\": -1,\n                \"data\": \"服务器繁忙，请稍后重试\"\n            }\n\
+          \    else:\n        return {\n            \"code\": -1,\n            \"\
+          data\": \"服务器繁忙，请稍后重试\"\n        }\n"
+        code_language: python3
+        default_value:
+        - key: code
+          type: number
+          value: '2'
+        - key: data
+          type: string
+          value: 服务器繁忙，请稍后重试
+        desc: ''
+        error_strategy: default-value
+        outputs:
+          code:
+            children: null
+            type: number
+          data:
+            children: null
+            type: string
+        selected: false
+        title: 代码执行
+        type: code
+        variables:
+        - value_selector:
+          - '1755077380960'
+          - status_code
+          value_type: number
+          variable: status_code
+        - value_selector:
+          - '1755077380960'
+          - body
+          value_type: string
+          variable: body
+      height: 90
+      id: '1755138773643'
+      position:
+        x: 1700
+        y: 456.5
+      positionAbsolute:
+        x: 1700
+        y: 456.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: '='
+            id: 8836ffe3-164c-416e-81ec-0c54c23669b3
+            value: '0'
+            varType: number
+            variable_selector:
+            - '1755138773643'
+            - code
+          id: 'true'
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 条件分支 2
+        type: if-else
+      height: 126
+      id: '1755139362650'
+      position:
+        x: 2034
+        y: 456.5
+      positionAbsolute:
+        x: 2034
+        y: 456.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: -1313.4035426545265
+      y: -215.355566864842
+      zoom: 1.1486983549970362
