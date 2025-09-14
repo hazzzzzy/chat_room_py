@@ -56,7 +56,7 @@ CREATE TABLE `user`  (
   `username` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT '用户的名称',
   `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT '用户的头像url',
   `status` tinyint NOT NULL DEFAULT 1 COMMENT '用户状态，1正常2禁用',
-  `is_delete` tinyint NOT NULL DEFAULT 2 COMMENT '用户删除状态，1删除2正常',
+  `is_delete` tinyint NOT NULL DEFAULT 2 COMMENT '用户是否已删除，1为删除2为正常',
   `avatar_update_time` datetime NULL DEFAULT NULL COMMENT '弃用',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `name`(`account` ASC) USING BTREE

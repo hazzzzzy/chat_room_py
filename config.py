@@ -14,7 +14,6 @@ SECRET_KEY = os.environ.get('SECRET_KEY')  # 生产环境强烈建议从环境�
 # 数据库配置
 SQLALCHEMY_TRACK_MODIFICATIONS = False  # 推荐设置为 False，避免不必要的警告和开销
 SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
-# 同样，数据库URI应从环境变量或更安全的配置源获取
 
 # Redis 配置
 REDIS_HOST = os.environ.get('REDIS_HOST')
@@ -36,3 +35,6 @@ COS_SECRET_ID = os.environ.get('COS_SECRET_ID')
 COS_SECRET_KEY = os.environ.get('COS_SECRET_KEY')
 COS_REGION = os.environ.get('COS_REGION')
 COS_BUCKET = os.environ.get('COS_BUCKET')
+
+# LLM
+DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY')

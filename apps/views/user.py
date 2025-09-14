@@ -1,4 +1,7 @@
-from flask import Blueprint, request
+import json
+import time
+
+from flask import Blueprint, request, Response
 
 from apps.forms.user import addUserForm, editUserForm, banUserForm
 from apps.middleware.decorator import errorHandler
@@ -25,7 +28,8 @@ def edit(**kwargs):
         return R.failed(msg=getError(form))
 
     username = form.username.data
-    isUsernameExist = User.query.filter(User.username == username, User.is_delete == 2, User.id != form.userID.data).first()
+    isUsernameExist = User.query.filter(User.username == username, User.is_delete == 2,
+                                        User.id != form.userID.data).first()
     if isUsernameExist:
         return R.failed(msg='用户名已存在')
     user = User.query.filter_by(id=form.userID.data, is_delete=2).first()
@@ -152,3 +156,35 @@ def ban(**kwargs):
     user.status = form.status.data
     db.session.commit()
     return R.ok(msg='用户状态修改成功')
+
+
+@user_bp.route('/test', methods=['get'])
+# @errorHandler
+def test(**kwargs):
+    # 完整的响应内容
+    full_content = "你好！我是一个专业的MySQL数据库查询助手。我可以帮助您：\n\n1. 执行SQL查询并获取结果\n2. 探索数据库结构和表关系\n3. 生成高效的MySQL查询语句\n4. 解释查询结果并提供优化建议\n\n请告诉我您需要查询什么数据，或者您想了解数据库的哪些信息。如果您有具体的查询需求，请详细描述，我会为您生成相应的SQL语句并执行。\n\n例如，您可以：\n- 询问某个表的结构\n- 请求特定的数据查询\n- 需要复杂的多表关联查询\n- 想要优化现有的SQL查询\n\n请告诉我您需要什么帮助！"
+
+    def generate():
+        # 将内容分割成小块，模拟流式输出
+        words = full_content
+
+        for i, word in enumerate(words):
+            chunk = {
+                'v': word
+            }
+            # 只发送内容部分，不包含任何事件元数据
+            print(chunk)
+            yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n\n"
+            time.sleep(0.1)  # 稍微延迟，模拟处理时间
+        yield 'event: finish\ndata:{}\n\n'
+
+    # 返回纯文本流式响应
+
+    return Response(
+        generate(),
+        headers={
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",  # 如果走了 Nginx，禁止缓冲,
+        'Content-Type': 'text/event-stream',
+    })
