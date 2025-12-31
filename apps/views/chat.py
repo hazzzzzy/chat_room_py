@@ -1,13 +1,15 @@
 from flask import request, Blueprint
 
+from apps.middleware.decorator import errorHandler
 from utils import R
 from utils.R import agnoStreamOk
-from utils.agent_instance import mysql_sql_agent
+from utils.mysql_agent_instance import mysql_sql_agent
 
 chat_bp = Blueprint('chat_bp', __name__, url_prefix='/chat')
 
+
 @chat_bp.route('/chat', methods=['get'])
-# @errorHandler
+@errorHandler
 def chat(**kwargs):
     q = request.args.get('q')
     if not q:

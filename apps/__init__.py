@@ -20,11 +20,11 @@ def createApp():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = SECRET_KEY
     app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
-    app.config['REDIS_HOST'] = REDIS_HOST
-    app.config['REDIS_PORT'] = REDIS_PORT
-    app.config['REDIS_DB'] = REDIS_DB
-    app.config['REDIS_PASSWORD'] = REDIS_PASSWORD  # 如果没有密码，可以设置为 None 或空字符串
-    app.config['REDIS_DECODE_RESPONSES'] = True  # 自动解码响应为字符串
+    # app.config['REDIS_HOST'] = REDIS_HOST
+    # app.config['REDIS_PORT'] = REDIS_PORT
+    # app.config['REDIS_DB'] = REDIS_DB
+    # app.config['REDIS_PASSWORD'] = REDIS_PASSWORD  # 如果没有密码，可以设置为 None 或空字符串
+    # app.config['REDIS_DECODE_RESPONSES'] = True  # 自动解码响应为字符串
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
     # 初始化扩展
