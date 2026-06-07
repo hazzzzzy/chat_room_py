@@ -1,34 +1,73 @@
-# 实时聊天室网站
-### 账号：test/test1，密码：123456
-## [在线预览](https://chat.bro9.vip)
-### 全局功能
-- [x] 登录
-- [x] 鉴权
-- [ ] 禁言
-- [X] 浏览器提示（标题闪烁）
-- [x] 用户自定义头像
-- [x] 用户自定义名称
-- [X] 用户打开多窗口会断掉上一个链接
-- [X] 智能客服
-### 房间功能
-- [X] 加入房间才连接
-- [x] 切换房间
-- [X] 分房间统计人数
-- [X] 上划加载聊天记录
-- [X] 气泡聊天样式
-- [ ] 添加房间
-- [x] 用户管理
+# Real-Time Chat Platform with AI Support Agent
 
-### 技术栈：Vue + Flask + Redis + Mysql + Docker + Nginx + Certbot
+A multi-room real-time chat web app: WebSocket messaging, Redis-backed presence and single-session login, JWT auth, and an embedded NL2SQL AI support agent.
 
-- **实时交互架构**：利用 Redis 构建高并发状态管理模块，实时追踪用户在线状态与房间流转；配合 Redis 锁机制实现Web端单点登录，有效解决多窗口会话冲突。
 
-- **安全认证与存储**：实施 JWT 接口鉴权策略；针对用户头像存储，创新性采用 HMAC 加密 ID 命名方案对接 OSS，彻底杜绝了用户隐私数据的遍历爬取风险。
+---
 
-- **AI 智能化演进**：主导智能客服模块的架构升级。从 Dify 平台的初步集成，进化至基于 Agno 的自主 Agent 开发，成功将 NL2SQL 查询准确率显著提升，支持更复杂的业务数据检索。
+## Key Features
 
-- **体验细微打磨**：优化前端交互细节，将消息提示从浏览器强弹窗降级为标签页闪烁，在提升用户专注度与维持消息触达率之间取得平衡。
+- **Real-time multi-room chat** over WebSocket (Flask-SocketIO), with per-room online counts and room switching.
+- **Redis-backed presence.** Tracks who is online and which room they are in, in real time.
+- **Single-session login.** A Redis lock enforces one active web session per user — opening a new window disconnects the previous one.
+- **JWT authentication** on the API layer.
+- **Privacy-safe avatars.** Avatar object keys on cloud storage are derived via HMAC, so files can't be enumerated or scraped.
+- **Infinite-scroll history.** Older messages load as you scroll up.
+- **Embedded AI support agent.** Started as a Dify integration and was rebuilt as an autonomous **Agno** agent with **NL2SQL**, so it can answer questions backed by live business data.
+- **Non-intrusive notifications.** New-message alerts use title-bar blinking instead of browser pop-ups.
 
-![聊天界面](/static/界面展示.png)
-![智能客服1](/static/智能客服.png)
-![智能客服2](/static/agent.png)
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Real-time backend | Flask, Flask-SocketIO (eventlet) |
+| State / cache | Redis (presence, room tracking, session lock) |
+| Data | SQLAlchemy + MySQL |
+| Auth & security | PyJWT, cryptography (HMAC), Flask-WTF / WTForms validation |
+| Storage | Tencent Cloud COS (object storage) |
+| AI | Agno agent, OpenAI-compatible LLM, NL2SQL |
+| Frontend | Vue |
+| Infra | Docker, Nginx, Certbot, Gunicorn |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    V[Vue client] <-->|WebSocket| F[Flask-SocketIO]
+    F <--> RD[(Redis<br/>presence · SSO lock)]
+    F <--> DB[(MySQL<br/>messages · users)]
+    F --> COS[(COS storage<br/>HMAC avatar keys)]
+    F --> AI[Agno AI agent · NL2SQL]
+```
+
+## Screenshots
+
+| Chat UI | AI support |
+|---------|-----------|
+| ![Chat interface](static/界面展示.png) | ![AI support](static/智能客服.png) |
+
+## Getting Started
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env        # set DB / Redis / JWT / COS / LLM config
+
+# Development
+python app.py
+
+# Production
+gunicorn -c gunicorn_config.py app:app
+```
+
+## Project Structure
+
+```
+apps/
+  views/       # HTTP routes: chat, login, rooms, upload, user
+  ws/          # WebSocket server
+  model/       # ORM models
+  middleware/  # auth decorators
+  forms/       # request validation
+utils/         # JWT, Redis, COS, response envelope
+dify/          # legacy AI support workflow export
+```
