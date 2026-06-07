@@ -2,6 +2,7 @@
 
 A multi-room real-time chat web app: WebSocket messaging, Redis-backed presence and single-session login, JWT auth, and an embedded NL2SQL AI support agent.
 
+**Live demo:** https://chat.bro9.vip — demo account `test` / `123456`
 
 ---
 
